@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "barista"
+version = "0.1.0"
+description = ""
+authors = ["Jack W <jackweatherilt@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pvporcupine = "^3.0.0"
+pygame = "^2.5.2"
+requests = "^2.31.0"
+openai = "^0.28.1"
+sounddevice = "^0.4.6"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.10.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
