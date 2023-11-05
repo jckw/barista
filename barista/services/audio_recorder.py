@@ -1,61 +1,73 @@
+import sys
+import struct
 import wave
-import sounddevice as sd
-from pvcobra import CobraVAD
-import numpy as np
-import queue
-import os
+import pvcobra
+from pvrecorder import PvRecorder
 import tempfile
+import time
 
 
 class AudioRecorder:
-    def __init__(self, cobra_access_key, sample_rate=16000):
-        self.vad = CobraVAD(access_key=cobra_access_key)
-        self.sample_rate = sample_rate
-        self.channels = 1
-        self.audio_queue = queue.Queue()
-        self.wavefile = None
-        self.is_speaking = False
-        self.temp_directory = tempfile.gettempdir()
-
-    def audio_callback(self, indata, frames, time, status):
-        if status:
-            print(status)
-
-        # Serialize indata to bytes for CobraVAD
-        voice_activity = self.vad.process(
-            np.frombuffer(indata, dtype=np.int16).tobytes()
-        )
-
-        if voice_activity:
-            if not self.is_speaking:
-                self.is_speaking = True
-                self.start_of_speech()
-            if self.wavefile:
-                self.wavefile.writeframes(indata.tobytes())
-        else:
-            if self.is_speaking:
-                self.is_speaking = False
-                self.end_of_speech()
-
-    def start_of_speech(self):
-        self.wavefile = wave.open(os.path.join(self.temp_directory, "speech.wav"), "wb")
-        self.wavefile.setnchannels(self.channels)
-        self.wavefile.setsampwidth(2)  # Assuming 16-bit audio
-        self.wavefile.setframerate(self.sample_rate)
-
-    def end_of_speech(self):
-        filename = self.wavefile.getfilename() if self.wavefile else None
-        if self.wavefile:
-            self.wavefile.close()
-        return filename
+    def __init__(self, cobra_access_key):
+        self.access_key = cobra_access_key
 
     def start_recording(self):
-        with sd.InputStream(
-            callback=self.audio_callback,
-            channels=self.channels,
-            samplerate=self.sample_rate,
-        ):
-            print("Recorder started...")
+        output_path = tempfile.gettempdir() + "/audio-recorder-output.wav"
+
+        cobra = pvcobra.create(access_key=self.access_key)
+
+        recorder = None
+        wav_file = None
+
+        try:
+            recorder = PvRecorder(frame_length=512)
+            recorder.start()
+
+            wav_file = wave.open(output_path, "w")
+            wav_file.setparams((1, 2, 16000, 512, "NONE", "NONE"))
+
+            print("Listening...")
+            silence_start_time = None
+            speaking_started = False
             while True:
-                # Replace with a more robust condition to keep the recorder alive
-                sd.sleep(1000)
+                pcm = recorder.read()
+
+                wav_file.writeframes(struct.pack("h" * len(pcm), *pcm))
+
+                voice_probability = cobra.process(pcm)
+                percentage = voice_probability * 100
+                bar_length = int((percentage / 10) * 3)
+                empty_length = 30 - bar_length
+                sys.stdout.write(
+                    "\r[%3d]|%s%s|" % (percentage, "█" * bar_length, " " * empty_length)
+                )
+                sys.stdout.flush()
+
+                if voice_probability < 0.5:
+                    if silence_start_time is None:
+                        silence_start_time = time.time()
+                    elif speaking_started and time.time() - silence_start_time > 2:
+                        print(
+                            "Stopping due to 2 seconds of silence after speaking started."
+                        )
+                        break
+                    elif time.time() - silence_start_time > 5:
+                        print("Stopping due to 5 seconds of total silence.")
+                        break
+                else:
+                    speaking_started = True
+                    silence_start_time = None
+
+        except KeyboardInterrupt:
+            print("Stopping ...")
+        finally:
+            if cobra is not None:
+                cobra.delete()
+
+            if wav_file is not None:
+                wav_file.close()
+
+            if recorder is not None:
+                recorder.delete()
+
+        return output_path

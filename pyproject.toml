@@ -6,12 +6,13 @@ authors = ["Jack W <jackweatherilt@outlook.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.13"
 pvporcupine = "^3.0.0"
 pygame = "^2.5.2"
 requests = "^2.31.0"
 openai = "^0.28.1"
-sounddevice = "^0.4.6"
+pvcobra = "^2.0.0"
+pvrecorder = "^1.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
