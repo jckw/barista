@@ -9,10 +9,12 @@ readme = "README.md"
 python = ">=3.11,<3.13"
 pvporcupine = "^3.0.0"
 pygame = "^2.5.2"
-requests = "^2.31.0"
 openai = "^0.28.1"
 pvcobra = "^2.0.0"
 pvrecorder = "^1.2.1"
+litellm = "^0.13.1"
+google-cloud-texttospeech = "^2.14.2"
+python-dotenv = "^1.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

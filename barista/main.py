@@ -1,35 +1,44 @@
-from services.wake_word_detector import PorcupineWakeWordDetector
+from services.wake_word_detector import WakeWordDetector
 from services.audio_recorder import AudioRecorder
 from services.speech_to_text import WhisperSpeechToText
 from services.text_to_speech import GoogleTextToSpeech
+from services.response_agent import ResponseAgent
 from utils.audio_player import AudioPlayer
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 def on_wake_word_detected():
     print("Wake word detected!")
-    # Start recording the command after wake word is detected
-    file_path = audio_recorder.record_audio()
+
+    file_path = audio_recorder.start_recording()
     print("Audio recording complete.")
-    # Transcribe the audio to text
+
     transcript = stt_service.transcribe_audio(file_path)
-    # TODO: Get response from response agent
     print(f"Transcription: {transcript}")
-    # Generate and play a response (as a placeholder, we use a static text)
-    response_audio = tts_service.synthesize_speech(
-        "I heard you, what can I do for you?"
-    )
+
+    answer = agent_service.get_response(transcript)
+    print(f"Answer: {answer}")
+
+    response_audio = tts_service.synthesize_speech(answer)
+
     audio_player.play_audio(response_audio)
 
 
 # Initialize services
-audio_recorder = AudioRecorder()
-stt_service = WhisperSpeechToText()
-tts_service = GoogleTextToSpeech(api_key="Your-Google-API-Key")
+audio_recorder = AudioRecorder(os.environ["PICOVOICE_ACCESS_KEY"])
+stt_service = WhisperSpeechToText(os.environ["OPENAI_API_KEY"])
+agent_service = ResponseAgent(os.environ["OPENAI_API_KEY"])
+tts_service = GoogleTextToSpeech()
 audio_player = AudioPlayer()
 
 # Initialize wake word detector and start listening
-wake_word_detector = PorcupineWakeWordDetector(
-    picovoice_access_key="Your-Picovoice-Access-Key",
+wake_word_detector = WakeWordDetector(
+    picovoice_access_key=os.environ["PICOVOICE_ACCESS_KEY"],
     detected_callback=on_wake_word_detected,
 )
-wake_word_detector.listen_for_wake_word()
+
+while True:
+    wake_word_detector.listen_for_wake_word()

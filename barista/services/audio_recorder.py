@@ -8,8 +8,8 @@ import time
 
 
 class AudioRecorder:
-    def __init__(self, cobra_access_key):
-        self.access_key = cobra_access_key
+    def __init__(self, picovoice_access_key):
+        self.access_key = picovoice_access_key
 
     def start_recording(self):
         output_path = tempfile.gettempdir() + "/audio-recorder-output.wav"

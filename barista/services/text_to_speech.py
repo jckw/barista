@@ -1,32 +1,27 @@
-import requests
-import json
+import tempfile
+import google.cloud.texttospeech as tts
 
 
 class GoogleTextToSpeech:
-    def __init__(self, api_key="Your-Google-API-Key"):
-        self.api_key = api_key
+    def synthesize_speech(
+        self,
+        text,
+    ):
+        output_path = tempfile.gettempdir() + "/audio-recorder-output.wav"
 
-    def synthesize_speech(self, text, output_file="response.mp3"):
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json; charset=utf-8",
-        }
-        data = {
-            "input": {"text": text},
-            "voice": {
-                "languageCode": "en-gb",
-                "name": "en-GB-Standard-A",
-                "ssmlGender": "FEMALE",
-            },
-            "audioConfig": {"audioEncoding": "MP3"},
-        }
-        response = requests.post(
-            "https://texttospeech.googleapis.com/v1/text:synthesize",
-            headers=headers,
-            data=json.dumps(data),
+        text_input = tts.SynthesisInput(text=text)
+        voice_params = tts.VoiceSelectionParams(
+            language_code="en-Gb",
+            name="en-GB-Standard-A",
         )
-        response_json = response.json()
-        audio_content = response_json["audioContent"]
-        with open(output_file, "wb") as audio_file:
-            audio_file.write(audio_content)
-        return output_file
+        audio_config = tts.AudioConfig(audio_encoding=tts.AudioEncoding.LINEAR16)
+        client = tts.TextToSpeechClient()
+        response = client.synthesize_speech(
+            input=text_input, voice=voice_params, audio_config=audio_config
+        )
+
+        with open(output_path, "wb") as out:
+            out.write(response.audio_content)
+            print(f"Audio content written to file {output_path}")
+
+        return output_path
