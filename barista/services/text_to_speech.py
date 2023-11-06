@@ -1,5 +1,6 @@
 import tempfile
 import google.cloud.texttospeech as tts
+import uuid
 
 
 class GoogleTextToSpeech:
@@ -7,7 +8,7 @@ class GoogleTextToSpeech:
         self,
         text,
     ):
-        output_path = tempfile.gettempdir() + "/audio-recorder-output.wav"
+        output_path = f"{tempfile.gettempdir()}/tts-barista-{uuid.uuid4()}.wav"
 
         text_input = tts.SynthesisInput(text=text)
         voice_params = tts.VoiceSelectionParams(
