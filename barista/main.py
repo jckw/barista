@@ -19,12 +19,9 @@ def on_wake_word_detected():
     transcript = stt_service.transcribe_audio(file_path)
     print(f"Transcription: {transcript}")
 
-    answer = agent_service.get_response(transcript)
-    print(f"Answer: {answer}")
-
-    response_audio = tts_service.synthesize_speech(answer)
-
-    audio_player.play_audio(response_audio)
+    for sentence in agent_service.stream_response_as_sentences(transcript):
+        response_audio = tts_service.synthesize_speech(sentence)
+        audio_player.play_audio(response_audio)
 
 
 # Initialize services
