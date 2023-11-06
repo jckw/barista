@@ -10,3 +10,6 @@ class AudioPlayer:
         pygame.mixer.music.play()
         while pygame.mixer.music.get_busy():  # Wait for audio to finish playing
             pygame.time.Clock().tick(10)
+
+    def stop_audio(self):
+        pygame.mixer.music.stop()
